@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Shop owner or admin user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "shopName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "employee"] }
+      },
+      "required": ["uid", "username", "shopName", "email", "role"]
+    },
+    "Item": {
+      "title": "Item",
+      "description": "Inventory item details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "barcode": { "type": "string" },
+        "name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "buyingPrice": { "type": "number" },
+        "sellingPrice": { "type": "number" },
+        "batchNumber": { "type": "string" },
+        "mfgDate": { "type": "string", "format": "date" },
+        "expDate": { "type": "string", "format": "date" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["barcode", "name", "quantity", "buyingPrice", "sellingPrice"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Sales transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "items": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "discount": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["cash", "bkash", "nagad", "other"] },
+        "cashReceived": { "type": "number" },
+        "cashReturn": { "type": "number" },
+        "customerPhone": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "employeeId": { "type": "string" }
+      },
+      "required": ["items", "totalPrice", "paymentMethod", "timestamp"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer profile and loyalty points",
+      "type": "object",
+      "properties": {
+        "phone": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "points": { "type": "number" },
+        "history": { "type": "array" }
+      },
+      "required": ["phone", "name"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Employee details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "salary": { "type": "number" },
+        "gender": { "type": "string" },
+        "address": { "type": "string" },
+        "position": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "phone"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles" },
+    "/items/{itemId}": { "schema": "Item", "description": "Inventory items" },
+    "/sales/{saleId}": { "schema": "Sale", "description": "Sales records" },
+    "/customers/{phone}": { "schema": "Customer", "description": "Customer records" },
+    "/employees/{uid}": { "schema": "Employee", "description": "Employee records" }
+  }
+}

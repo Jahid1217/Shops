@@ -1,0 +1,5 @@
+{
+  "name": "StockMaster Pro",
+  "description": "A professional Inventory Management System with real-time tracking, POS, barcode scanning, and customer loyalty management.",
+  "requestFramePermissions": ["camera"]
+}

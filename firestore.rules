@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public access for this "no-config" setup
+    // Note: In a production app, you should use Firebase Auth and secure these rules.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
