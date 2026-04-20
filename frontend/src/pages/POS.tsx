@@ -187,7 +187,11 @@ export default function POS() {
   };
 
   const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
+    contentRef: receiptRef,
+    documentTitle: () => `Invoice-${lastSaleId || new Date().toISOString().slice(0, 10)}`,
+    onPrintError: () => {
+      alert('Failed to open print dialog. Please try again.');
+    },
     onAfterPrint: () => {
       setShowReceipt(false);
       setCart([]);

@@ -1,8 +1,10 @@
 package com.stockmaster.controller;
 
 import com.stockmaster.model.InventoryHistory;
+import com.stockmaster.model.User;
 import com.stockmaster.service.InventoryHistoryService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,7 +20,7 @@ public class InventoryHistoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<InventoryHistory>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<List<InventoryHistory>> getAll(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(service.getAll(user.getShopName()));
     }
 }

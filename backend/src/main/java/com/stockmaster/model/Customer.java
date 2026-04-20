@@ -20,6 +20,8 @@ public class Customer {
 
     private String address;
 
+    private String shopName;
+
     @Builder.Default
     private Integer points = 0;
 

@@ -16,18 +16,26 @@ public class AuditLogService {
         this.auditLogRepository = auditLogRepository;
     }
 
-    public List<AuditLog> getAllLogs() {
-        return auditLogRepository.findAllByOrderByTimestampDesc();
+    public List<AuditLog> getAllLogs(String shopName) {
+        return auditLogRepository.findAllByShopNameOrderByTimestampDesc(normalizeShopName(shopName));
     }
 
-    public void log(Long userId, String userName, String action, String details) {
+    public void log(Long userId, String userName, String shopName, String action, String details) {
         AuditLog log = AuditLog.builder()
                 .userId(userId)
                 .userName(userName)
+                .shopName(normalizeShopName(shopName))
                 .action(action)
                 .details(details)
                 .timestamp(LocalDateTime.now())
                 .build();
         auditLogRepository.save(log);
+    }
+
+    private String normalizeShopName(String shopName) {
+        if (shopName == null || shopName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Shop information is missing for the current user.");
+        }
+        return shopName.trim();
     }
 }

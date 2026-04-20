@@ -28,13 +28,14 @@ public class DashboardService {
         this.saleRepository = saleRepository;
     }
 
-    public DashboardStats getStats() {
-        List<Item> items = itemRepository.findAll();
+    public DashboardStats getStats(String shopName) {
+        String scopedShop = normalizeShopName(shopName);
+        List<Item> items = itemRepository.findAllByShopName(scopedShop);
         long totalItems = items.size();
         long lowStock = items.stream().filter(i -> i.getQuantity() > 0 && i.getQuantity() <= 5).count();
         long outOfStock = items.stream().filter(i -> i.getQuantity() <= 0).count();
-        long totalCustomers = customerRepository.count();
-        Double totalSales = saleRepository.getTotalSalesAmount();
+        long totalCustomers = customerRepository.countByShopName(scopedShop);
+        Double totalSales = saleRepository.getTotalSalesAmount(scopedShop);
 
         return DashboardStats.builder()
                 .totalItems(totalItems)
@@ -45,7 +46,8 @@ public class DashboardService {
                 .build();
     }
 
-    public List<Map<String, Object>> getChartData() {
+    public List<Map<String, Object>> getChartData(String shopName) {
+        String scopedShop = normalizeShopName(shopName);
         List<Map<String, Object>> chartData = new ArrayList<>();
 
         for (int i = 6; i >= 0; i--) {
@@ -53,7 +55,7 @@ public class DashboardService {
             LocalDateTime start = date.atStartOfDay();
             LocalDateTime end = date.atTime(LocalTime.MAX);
 
-            List<Sale> daySales = saleRepository.findByTimestampBetween(start, end);
+            List<Sale> daySales = saleRepository.findByTimestampBetweenAndShopName(start, end, scopedShop);
             double total = daySales.stream().mapToDouble(Sale::getTotalPrice).sum();
 
             Map<String, Object> entry = new HashMap<>();
@@ -65,8 +67,8 @@ public class DashboardService {
         return chartData;
     }
 
-    public List<Map<String, Object>> getTopSelling() {
-        List<Sale> allSales = saleRepository.findAll();
+    public List<Map<String, Object>> getTopSelling(String shopName) {
+        List<Sale> allSales = saleRepository.findAllByShopName(normalizeShopName(shopName));
         Map<Long, Map<String, Object>> itemCounts = new HashMap<>();
 
         for (Sale sale : allSales) {
@@ -89,11 +91,18 @@ public class DashboardService {
                 .collect(Collectors.toList());
     }
 
-    public List<Item> getLowStockItems() {
-        return itemRepository.findByQuantityLessThanEqualOrderByQuantityAsc(5);
+    public List<Item> getLowStockItems(String shopName) {
+        return itemRepository.findByQuantityLessThanEqualAndShopNameOrderByQuantityAsc(5, normalizeShopName(shopName));
     }
 
-    public List<Sale> getRecentSales() {
-        return saleRepository.findTop5ByOrderByTimestampDesc();
+    public List<Sale> getRecentSales(String shopName) {
+        return saleRepository.findTop5ByShopNameOrderByTimestampDesc(normalizeShopName(shopName));
+    }
+
+    private String normalizeShopName(String shopName) {
+        if (shopName == null || shopName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Shop information is missing for the current user.");
+        }
+        return shopName.trim();
     }
 }

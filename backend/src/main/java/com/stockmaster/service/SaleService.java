@@ -35,21 +35,22 @@ public class SaleService {
         this.auditLogService = auditLogService;
     }
 
-    public List<Sale> getAllSales() {
-        return saleRepository.findAllByOrderByTimestampDesc();
+    public List<Sale> getAllSales(String shopName) {
+        return saleRepository.findByShopNameOrderByTimestampDesc(normalizeShopName(shopName));
     }
 
-    public List<Sale> getRecentSales() {
-        return saleRepository.findTop5ByOrderByTimestampDesc();
+    public List<Sale> getRecentSales(String shopName) {
+        return saleRepository.findTop5ByShopNameOrderByTimestampDesc(normalizeShopName(shopName));
     }
 
-    public List<Sale> getSalesByCustomerPhone(String phone) {
-        return saleRepository.findByCustomerPhoneOrderByTimestampDesc(phone);
+    public List<Sale> getSalesByCustomerPhone(String phone, String shopName) {
+        return saleRepository.findByCustomerPhoneAndShopNameOrderByTimestampDesc(phone, normalizeShopName(shopName));
     }
 
     @Transactional
-    public Sale checkout(CheckoutRequest request, Long userId, String userName) {
+    public Sale checkout(CheckoutRequest request, Long userId, String userName, String shopName) {
         validateCheckoutRequest(request);
+        String scopedShop = normalizeShopName(shopName);
 
         String customerPhone = normalizePhone(request.getCustomerPhone());
         double subtotal = 0.0;
@@ -61,6 +62,7 @@ public class SaleService {
                 .cashReceived(0.0)
                 .cashReturn(0.0)
                 .customerPhone(customerPhone)
+                .shopName(scopedShop)
                 .timestamp(LocalDateTime.now())
                 .employeeId(userId)
                 .employeeName(userName)
@@ -75,7 +77,7 @@ public class SaleService {
                 throw new IllegalArgumentException("Item quantity must be greater than zero.");
             }
 
-            Item item = itemRepository.findById(cartItem.getId())
+            Item item = itemRepository.findByIdAndShopName(cartItem.getId(), scopedShop)
                     .orElseThrow(() -> new IllegalArgumentException("Item not found with id: " + cartItem.getId()));
 
             if (item.getQuantity() < cartItem.getQty()) {
@@ -105,6 +107,7 @@ public class SaleService {
                     .itemId(item.getId())
                     .itemName(item.getName())
                     .barcode(item.getBarcode())
+                    .shopName(scopedShop)
                     .type("sale")
                     .quantity(cartItem.getQty())
                     .timestamp(LocalDateTime.now())
@@ -142,7 +145,7 @@ public class SaleService {
 
         // Update customer points if phone exists, otherwise create a walk-in customer record.
         if (customerPhone != null) {
-            customerRepository.findByPhone(customerPhone).ifPresentOrElse(
+            customerRepository.findByPhoneAndShopName(customerPhone, scopedShop).ifPresentOrElse(
                     customer -> {
                         customer.setPoints(customer.getPoints() + 1);
                         customerRepository.save(customer);
@@ -152,6 +155,7 @@ public class SaleService {
                                 .phone(customerPhone)
                                 .name("Walk-in Customer")
                                 .points(1)
+                                .shopName(scopedShop)
                                 .createdBy(userName)
                                 .build();
                         customerRepository.save(newCustomer);
@@ -159,7 +163,7 @@ public class SaleService {
             );
         }
 
-        auditLogService.log(userId, userName, "Checkout",
+        auditLogService.log(userId, userName, scopedShop, "Checkout",
                 "Completed sale #" + saved.getId() + " for BDT " + String.format("%.2f", saved.getTotalPrice()));
 
         return saved;
@@ -187,5 +191,12 @@ public class SaleService {
 
     private double valueOrZero(Double value) {
         return value == null ? 0.0 : value;
+    }
+
+    private String normalizeShopName(String shopName) {
+        if (shopName == null || shopName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Shop information is missing for the current user.");
+        }
+        return shopName.trim();
     }
 }

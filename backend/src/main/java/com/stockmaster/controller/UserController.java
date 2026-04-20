@@ -43,11 +43,16 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> updateProfile(
             @AuthenticationPrincipal User user,
             @RequestBody ProfileUpdateRequest request) {
+        String currentShop = user.getShopName() != null ? user.getShopName().trim() : "";
+        String requestedShop = request.getShopName() != null ? request.getShopName().trim() : currentShop;
+        if (!requestedShop.equals(currentShop)) {
+            throw new IllegalArgumentException("Shop name cannot be changed from profile settings.");
+        }
         user.setUsername(request.getUsername());
-        user.setShopName(request.getShopName());
+        user.setShopName(currentShop);
         user.setPhoneNumber(request.getPhoneNumber());
         userRepository.save(user);
-        auditLogService.log(user.getId(), user.getUsername(), "Update Profile", "Updated profile information");
+        auditLogService.log(user.getId(), user.getUsername(), user.getShopName(), "Update Profile", "Updated profile information");
         return getProfile(user);
     }
 
@@ -60,7 +65,7 @@ public class UserController {
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
-        auditLogService.log(user.getId(), user.getUsername(), "Change Password", "Changed account password");
+        auditLogService.log(user.getId(), user.getUsername(), user.getShopName(), "Change Password", "Changed account password");
         return ResponseEntity.ok(Map.of("message", "Password changed successfully!"));
     }
 }

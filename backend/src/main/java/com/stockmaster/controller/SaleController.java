@@ -23,8 +23,8 @@ public class SaleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAll() {
-        List<Sale> sales = saleService.getAllSales();
+    public ResponseEntity<List<Map<String, Object>>> getAll(@AuthenticationPrincipal User user) {
+        List<Sale> sales = saleService.getAllSales(user.getShopName());
         return ResponseEntity.ok(sales.stream().map(this::toMap).collect(Collectors.toList()));
     }
 
@@ -32,7 +32,7 @@ public class SaleController {
     public ResponseEntity<Map<String, Object>> checkout(
             @RequestBody CheckoutRequest request,
             @AuthenticationPrincipal User user) {
-        Sale sale = saleService.checkout(request, user.getId(), user.getUsername());
+        Sale sale = saleService.checkout(request, user.getId(), user.getUsername(), user.getShopName());
         return ResponseEntity.ok(toMap(sale));
     }
 

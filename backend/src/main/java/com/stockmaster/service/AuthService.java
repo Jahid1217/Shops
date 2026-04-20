@@ -21,6 +21,10 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
+        if (request.getShopName() == null || request.getShopName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Shop name is required.");
+        }
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists. Please use a different username.");
         }
@@ -33,7 +37,7 @@ public class AuthService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .shopName(request.getShopName())
+                .shopName(request.getShopName().trim())
                 .phoneNumber(request.getPhone())
                 .role("admin")
                 .build();
@@ -58,6 +62,10 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Invalid email or password. Please try again.");
+        }
+
+        if (user.getShopName() == null || user.getShopName().trim().isEmpty()) {
+            throw new IllegalArgumentException("This account is not linked to any shop.");
         }
 
         String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole());

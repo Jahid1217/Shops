@@ -29,6 +29,7 @@ public class Sale {
     private Double cashReturn = 0.0;
 
     private String customerPhone;
+    private String shopName;
 
     @Column(nullable = false)
     @Builder.Default

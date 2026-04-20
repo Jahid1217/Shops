@@ -25,22 +25,23 @@ public class ItemService {
         this.auditLogService = auditLogService;
     }
 
-    public List<Item> getAllItems() {
-        return itemRepository.findAll();
+    public List<Item> getAllItems(String shopName) {
+        return itemRepository.findAllByShopName(normalizeShopName(shopName));
     }
 
-    public Item getById(Long id) {
-        return itemRepository.findById(id)
+    public Item getById(Long id, String shopName) {
+        return itemRepository.findByIdAndShopName(id, normalizeShopName(shopName))
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found with id: " + id));
     }
 
-    public Optional<Item> getByBarcode(String barcode) {
-        return itemRepository.findByBarcode(barcode);
+    public Optional<Item> getByBarcode(String barcode, String shopName) {
+        return itemRepository.findByBarcodeAndShopName(barcode, normalizeShopName(shopName));
     }
 
     @Transactional
-    public Item createOrRestock(Item item, Long userId, String userName) {
-        Optional<Item> existing = itemRepository.findByBarcode(item.getBarcode());
+    public Item createOrRestock(Item item, Long userId, String userName, String shopName) {
+        String scopedShop = normalizeShopName(shopName);
+        Optional<Item> existing = itemRepository.findByBarcodeAndShopName(item.getBarcode(), scopedShop);
 
         if (existing.isPresent()) {
             // Restock existing item
@@ -58,31 +59,34 @@ public class ItemService {
                     .itemId(saved.getId())
                     .itemName(saved.getName())
                     .barcode(saved.getBarcode())
+                    .shopName(scopedShop)
                     .type("restock")
                     .quantity(item.getQuantity())
                     .timestamp(LocalDateTime.now())
                     .performedBy(userName)
                     .build());
 
-            auditLogService.log(userId, userName, "Restock Item",
+            auditLogService.log(userId, userName, scopedShop, "Restock Item",
                     "Restocked item: " + saved.getName() + " (+" + item.getQuantity() + ")");
 
             return saved;
         } else {
             // Create new item
+            item.setShopName(scopedShop);
             Item saved = itemRepository.save(item);
 
             historyRepository.save(InventoryHistory.builder()
                     .itemId(saved.getId())
                     .itemName(saved.getName())
                     .barcode(saved.getBarcode())
+                    .shopName(scopedShop)
                     .type("new_item")
                     .quantity(saved.getQuantity())
                     .timestamp(LocalDateTime.now())
                     .performedBy(userName)
                     .build());
 
-            auditLogService.log(userId, userName, "Add New Item",
+            auditLogService.log(userId, userName, scopedShop, "Add New Item",
                     "Added new item: " + saved.getName() + " (" + saved.getBarcode() + ")");
 
             return saved;
@@ -90,8 +94,9 @@ public class ItemService {
     }
 
     @Transactional
-    public Item update(Long id, Item item, Long userId, String userName) {
-        Item existing = getById(id);
+    public Item update(Long id, Item item, Long userId, String userName, String shopName) {
+        String scopedShop = normalizeShopName(shopName);
+        Item existing = getById(id, scopedShop);
         existing.setBarcode(item.getBarcode());
         existing.setName(item.getName());
         existing.setQuantity(item.getQuantity());
@@ -108,22 +113,31 @@ public class ItemService {
                 .itemId(saved.getId())
                 .itemName(saved.getName())
                 .barcode(saved.getBarcode())
+                .shopName(scopedShop)
                 .type("update")
                 .quantity(saved.getQuantity())
                 .timestamp(LocalDateTime.now())
                 .performedBy(userName)
                 .build());
 
-        auditLogService.log(userId, userName, "Update Item",
+        auditLogService.log(userId, userName, scopedShop, "Update Item",
                 "Updated item: " + saved.getName() + " (" + saved.getBarcode() + ")");
 
         return saved;
     }
 
     @Transactional
-    public void delete(Long id, Long userId, String userName) {
-        Item item = getById(id);
+    public void delete(Long id, Long userId, String userName, String shopName) {
+        String scopedShop = normalizeShopName(shopName);
+        Item item = getById(id, scopedShop);
         itemRepository.delete(item);
-        auditLogService.log(userId, userName, "Delete Item", "Deleted item: " + item.getName());
+        auditLogService.log(userId, userName, scopedShop, "Delete Item", "Deleted item: " + item.getName());
+    }
+
+    private String normalizeShopName(String shopName) {
+        if (shopName == null || shopName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Shop information is missing for the current user.");
+        }
+        return shopName.trim();
     }
 }

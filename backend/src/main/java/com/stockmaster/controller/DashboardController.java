@@ -3,9 +3,10 @@ package com.stockmaster.controller;
 import com.stockmaster.dto.DashboardStats;
 import com.stockmaster.model.Item;
 import com.stockmaster.model.Sale;
-import com.stockmaster.model.SaleItem;
+import com.stockmaster.model.User;
 import com.stockmaster.service.DashboardService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -22,28 +23,28 @@ public class DashboardController {
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<DashboardStats> getStats() {
-        return ResponseEntity.ok(dashboardService.getStats());
+    public ResponseEntity<DashboardStats> getStats(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(dashboardService.getStats(user.getShopName()));
     }
 
     @GetMapping("/chart-data")
-    public ResponseEntity<List<Map<String, Object>>> getChartData() {
-        return ResponseEntity.ok(dashboardService.getChartData());
+    public ResponseEntity<List<Map<String, Object>>> getChartData(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(dashboardService.getChartData(user.getShopName()));
     }
 
     @GetMapping("/top-selling")
-    public ResponseEntity<List<Map<String, Object>>> getTopSelling() {
-        return ResponseEntity.ok(dashboardService.getTopSelling());
+    public ResponseEntity<List<Map<String, Object>>> getTopSelling(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(dashboardService.getTopSelling(user.getShopName()));
     }
 
     @GetMapping("/low-stock")
-    public ResponseEntity<List<Item>> getLowStock() {
-        return ResponseEntity.ok(dashboardService.getLowStockItems());
+    public ResponseEntity<List<Item>> getLowStock(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(dashboardService.getLowStockItems(user.getShopName()));
     }
 
     @GetMapping("/recent-sales")
-    public ResponseEntity<List<Map<String, Object>>> getRecentSales() {
-        List<Sale> sales = dashboardService.getRecentSales();
+    public ResponseEntity<List<Map<String, Object>>> getRecentSales(@AuthenticationPrincipal User user) {
+        List<Sale> sales = dashboardService.getRecentSales(user.getShopName());
         List<Map<String, Object>> result = sales.stream().map(s -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("id", s.getId());

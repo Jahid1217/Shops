@@ -15,6 +15,19 @@ import { useAuth } from '../lib/AuthContext';
 import { formatCurrency, cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
+type ItemFormData = {
+  barcode: string;
+  name: string;
+  quantity: string;
+  buyingPrice: string;
+  sellingPrice: string;
+  batchNumber: string;
+  mfgDate: string;
+  expDate: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: string;
+};
+
 export default function Inventory() {
   const { profile, isAdmin } = useAuth();
   const [items, setItems] = useState<any[]>([]);
@@ -23,18 +36,30 @@ export default function Inventory() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ItemFormData>({
     barcode: '',
     name: '',
-    quantity: 0,
-    buyingPrice: 0,
-    sellingPrice: 0,
+    quantity: '0',
+    buyingPrice: '0',
+    sellingPrice: '0',
     batchNumber: '',
     mfgDate: '',
     expDate: '',
     discountType: 'percent' as 'percent' | 'fixed',
-    discountValue: 0,
+    discountValue: '0',
   });
+
+  const normalizeNumberInput = (value: string) => {
+    if (value.trim() === '') return 0;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const autoSelectDefaultZero = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (e.target.value === '0') {
+      e.target.select();
+    }
+  };
 
   const fetchItems = async () => {
     try {
@@ -65,13 +90,13 @@ export default function Inventory() {
         setFormData(prev => ({ 
           ...prev, 
           name: result.name,
-          buyingPrice: result.buyingPrice,
-          sellingPrice: result.sellingPrice,
+          buyingPrice: String(result.buyingPrice ?? 0),
+          sellingPrice: String(result.sellingPrice ?? 0),
           batchNumber: result.batchNumber || '',
           mfgDate: result.mfgDate || '',
           expDate: result.expDate || '',
           discountType: result.discountType || 'percent',
-          discountValue: result.discountValue || 0,
+          discountValue: String(result.discountValue ?? 0),
         }));
       }
     } catch (error) {
@@ -89,11 +114,19 @@ export default function Inventory() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      quantity: normalizeNumberInput(formData.quantity),
+      buyingPrice: normalizeNumberInput(formData.buyingPrice),
+      sellingPrice: normalizeNumberInput(formData.sellingPrice),
+      discountValue: normalizeNumberInput(formData.discountValue),
+    };
+
     try {
       if (currentItem) {
-        await api.put(`/items/${currentItem.id}`, formData);
+        await api.put(`/items/${currentItem.id}`, payload);
       } else {
-        await api.post('/items', formData);
+        await api.post('/items', payload);
       }
       closeModal();
       fetchItems();
@@ -123,28 +156,28 @@ export default function Inventory() {
       setFormData({
         barcode: item.barcode,
         name: item.name,
-        quantity: item.quantity,
-        buyingPrice: item.buyingPrice,
-        sellingPrice: item.sellingPrice,
+        quantity: String(item.quantity ?? 0),
+        buyingPrice: String(item.buyingPrice ?? 0),
+        sellingPrice: String(item.sellingPrice ?? 0),
         batchNumber: item.batchNumber || '',
         mfgDate: item.mfgDate || '',
         expDate: item.expDate || '',
         discountType: item.discountType || 'percent',
-        discountValue: item.discountValue || 0,
+        discountValue: String(item.discountValue ?? 0),
       });
     } else {
       setCurrentItem(null);
       setFormData({
         barcode: '',
         name: '',
-        quantity: 0,
-        buyingPrice: 0,
-        sellingPrice: 0,
+        quantity: '0',
+        buyingPrice: '0',
+        sellingPrice: '0',
         batchNumber: '',
         mfgDate: '',
         expDate: '',
         discountType: 'percent',
-        discountValue: 0,
+        discountValue: '0',
       });
     }
     setIsModalOpen(true);
@@ -399,7 +432,8 @@ export default function Inventory() {
                       type="number" 
                       className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-black"
                       value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                      onFocus={autoSelectDefaultZero}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                     />
                   </div>
 
@@ -413,7 +447,8 @@ export default function Inventory() {
                           type="number" 
                           className="w-full pl-8 pr-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-black"
                           value={formData.buyingPrice}
-                          onChange={(e) => setFormData({ ...formData, buyingPrice: Number(e.target.value) })}
+                          onFocus={autoSelectDefaultZero}
+                          onChange={(e) => setFormData({ ...formData, buyingPrice: e.target.value })}
                         />
                       </div>
                     </div>
@@ -426,7 +461,8 @@ export default function Inventory() {
                           type="number" 
                           className="w-full pl-8 pr-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-black"
                           value={formData.sellingPrice}
-                          onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
+                          onFocus={autoSelectDefaultZero}
+                          onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
                         />
                       </div>
                     </div>
@@ -450,7 +486,8 @@ export default function Inventory() {
                         type="number" 
                         className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-black"
                         value={formData.discountValue}
-                        onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })}
+                        onFocus={autoSelectDefaultZero}
+                        onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
                       />
                     </div>
                   </div>

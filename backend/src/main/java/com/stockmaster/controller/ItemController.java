@@ -22,18 +22,18 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Item>> getAll() {
-        return ResponseEntity.ok(itemService.getAllItems());
+    public ResponseEntity<List<Item>> getAll(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(itemService.getAllItems(user.getShopName()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Item> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(itemService.getById(id));
+    public ResponseEntity<Item> getById(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(itemService.getById(id, user.getShopName()));
     }
 
     @GetMapping("/barcode/{barcode}")
-    public ResponseEntity<?> getByBarcode(@PathVariable String barcode) {
-        Optional<Item> item = itemService.getByBarcode(barcode);
+    public ResponseEntity<?> getByBarcode(@PathVariable String barcode, @AuthenticationPrincipal User user) {
+        Optional<Item> item = itemService.getByBarcode(barcode, user.getShopName());
         if (item.isPresent()) {
             return ResponseEntity.ok(item.get());
         }
@@ -42,17 +42,17 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<Item> create(@RequestBody Item item, @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(itemService.createOrRestock(item, user.getId(), user.getUsername()));
+        return ResponseEntity.ok(itemService.createOrRestock(item, user.getId(), user.getUsername(), user.getShopName()));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Item> update(@PathVariable Long id, @RequestBody Item item, @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(itemService.update(id, item, user.getId(), user.getUsername()));
+        return ResponseEntity.ok(itemService.update(id, item, user.getId(), user.getUsername(), user.getShopName()));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> delete(@PathVariable Long id, @AuthenticationPrincipal User user) {
-        itemService.delete(id, user.getId(), user.getUsername());
+        itemService.delete(id, user.getId(), user.getUsername(), user.getShopName());
         return ResponseEntity.ok(Map.of("message", "Item deleted successfully"));
     }
 }

@@ -14,6 +14,7 @@ public class AuditLog {
 
     private Long userId;
     private String userName;
+    private String shopName;
 
     @Column(nullable = false)
     private String action;

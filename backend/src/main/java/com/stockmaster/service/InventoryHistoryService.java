@@ -15,7 +15,14 @@ public class InventoryHistoryService {
         this.repository = repository;
     }
 
-    public List<InventoryHistory> getAll() {
-        return repository.findAllByOrderByTimestampDesc();
+    public List<InventoryHistory> getAll(String shopName) {
+        return repository.findAllByShopNameOrderByTimestampDesc(normalizeShopName(shopName));
+    }
+
+    private String normalizeShopName(String shopName) {
+        if (shopName == null || shopName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Shop information is missing for the current user.");
+        }
+        return shopName.trim();
     }
 }

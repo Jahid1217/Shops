@@ -16,27 +16,30 @@ public class EmployeeService {
         this.employeeRepository = employeeRepository;
     }
 
-    public List<Employee> getAll() {
-        return employeeRepository.findAll();
+    public List<Employee> getAll(String shopName) {
+        return employeeRepository.findAllByShopName(normalizeShopName(shopName));
     }
 
-    public Employee getById(Long id) {
-        return employeeRepository.findById(id)
+    public Employee getById(Long id, String shopName) {
+        return employeeRepository.findByIdAndShopName(id, normalizeShopName(shopName))
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
 
-    public Employee create(Employee employee) {
-        if (employee.getEmail() != null && employeeRepository.existsByEmail(employee.getEmail())) {
+    public Employee create(Employee employee, String shopName) {
+        String scopedShop = normalizeShopName(shopName);
+        if (employee.getEmail() != null && employeeRepository.existsByEmailAndShopName(employee.getEmail(), scopedShop)) {
             throw new IllegalArgumentException("Employee with this email already exists!");
         }
+        employee.setShopName(scopedShop);
         return employeeRepository.save(employee);
     }
 
-    public Employee update(Long id, Employee employee) {
-        Employee existing = getById(id);
+    public Employee update(Long id, Employee employee, String shopName) {
+        String scopedShop = normalizeShopName(shopName);
+        Employee existing = getById(id, scopedShop);
         if (employee.getEmail() != null
                 && !employee.getEmail().equals(existing.getEmail())
-                && employeeRepository.existsByEmail(employee.getEmail())) {
+                && employeeRepository.existsByEmailAndShopName(employee.getEmail(), scopedShop)) {
             throw new IllegalArgumentException("Employee with this email already exists!");
         }
         existing.setName(employee.getName());
@@ -50,8 +53,15 @@ public class EmployeeService {
         return employeeRepository.save(existing);
     }
 
-    public void delete(Long id) {
-        Employee employee = getById(id);
+    public void delete(Long id, String shopName) {
+        Employee employee = getById(id, shopName);
         employeeRepository.delete(employee);
+    }
+
+    private String normalizeShopName(String shopName) {
+        if (shopName == null || shopName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Shop information is missing for the current user.");
+        }
+        return shopName.trim();
     }
 }

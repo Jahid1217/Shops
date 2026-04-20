@@ -15,6 +15,8 @@ public class Employee {
     @Column(nullable = false)
     private String name;
 
+    private String shopName;
+
     private String phone;
 
     @Column(unique = true)

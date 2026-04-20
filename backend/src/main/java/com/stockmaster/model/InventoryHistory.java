@@ -15,6 +15,7 @@ public class InventoryHistory {
     private Long itemId;
     private String itemName;
     private String barcode;
+    private String shopName;
 
     @Column(nullable = false)
     private String type;

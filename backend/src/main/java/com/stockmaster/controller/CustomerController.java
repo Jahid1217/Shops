@@ -25,13 +25,13 @@ public class CustomerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Customer>> getAll() {
-        return ResponseEntity.ok(customerService.getAll());
+    public ResponseEntity<List<Customer>> getAll(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(customerService.getAll(user.getShopName()));
     }
 
     @GetMapping("/phone/{phone}")
-    public ResponseEntity<?> getByPhone(@PathVariable String phone) {
-        Optional<Customer> customer = customerService.getByPhone(phone);
+    public ResponseEntity<?> getByPhone(@PathVariable String phone, @AuthenticationPrincipal User user) {
+        Optional<Customer> customer = customerService.getByPhone(phone, user.getShopName());
         if (customer.isPresent()) {
             return ResponseEntity.ok(customer.get());
         }
@@ -40,18 +40,18 @@ public class CustomerController {
 
     @PostMapping
     public ResponseEntity<Customer> create(@RequestBody Customer customer, @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(customerService.create(customer, user.getId(), user.getUsername()));
+        return ResponseEntity.ok(customerService.create(customer, user.getId(), user.getUsername(), user.getShopName()));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Customer> update(@PathVariable Long id, @RequestBody Customer customer, @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(customerService.update(id, customer, user.getId(), user.getUsername()));
+        return ResponseEntity.ok(customerService.update(id, customer, user.getId(), user.getUsername(), user.getShopName()));
     }
 
     @GetMapping("/{id}/history")
-    public ResponseEntity<List<Map<String, Object>>> getHistory(@PathVariable Long id) {
-        Customer customer = customerService.getById(id);
-        List<Sale> sales = saleService.getSalesByCustomerPhone(customer.getPhone());
+    public ResponseEntity<List<Map<String, Object>>> getHistory(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        Customer customer = customerService.getById(id, user.getShopName());
+        List<Sale> sales = saleService.getSalesByCustomerPhone(customer.getPhone(), user.getShopName());
         List<Map<String, Object>> result = sales.stream().map(s -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("id", s.getId());
