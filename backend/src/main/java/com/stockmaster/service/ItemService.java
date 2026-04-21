@@ -44,7 +44,7 @@ public class ItemService {
         Optional<Item> existing = itemRepository.findByBarcodeAndShopName(item.getBarcode(), scopedShop);
 
         if (existing.isPresent()) {
-            // Restock existing item
+            // Restock existing item. Keep original item name for existing barcode.
             Item existingItem = existing.get();
             existingItem.setQuantity(existingItem.getQuantity() + item.getQuantity());
             existingItem.setBuyingPrice(item.getBuyingPrice());
@@ -52,6 +52,8 @@ public class ItemService {
             existingItem.setBatchNumber(item.getBatchNumber());
             existingItem.setMfgDate(item.getMfgDate());
             existingItem.setExpDate(item.getExpDate());
+            existingItem.setDiscountType(item.getDiscountType());
+            existingItem.setDiscountValue(item.getDiscountValue());
             Item saved = itemRepository.save(existingItem);
 
             // Record history

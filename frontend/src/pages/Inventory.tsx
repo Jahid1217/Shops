@@ -37,6 +37,7 @@ export default function Inventory() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
+  const [isExistingBarcodeItem, setIsExistingBarcodeItem] = useState(false);
   const [formData, setFormData] = useState<ItemFormData>({
     barcode: '',
     name: '',
@@ -84,10 +85,14 @@ export default function Inventory() {
   }, [isScanning]);
 
   const checkBarcode = async (barcode: string) => {
-    if (!barcode) return;
+    if (!barcode) {
+      setIsExistingBarcodeItem(false);
+      return;
+    }
     try {
       const result = await api.get<any>(`/items/barcode/${barcode}`);
-      if (result && !result.found === false) {
+      if (result && result.found !== false) {
+        setIsExistingBarcodeItem(true);
         setFormData(prev => ({ 
           ...prev, 
           name: result.name,
@@ -99,9 +104,12 @@ export default function Inventory() {
           discountType: result.discountType || 'percent',
           discountValue: String(result.discountValue ?? 0),
         }));
+      } else {
+        setIsExistingBarcodeItem(false);
       }
     } catch (error) {
       // Item not found, that's fine
+      setIsExistingBarcodeItem(false);
     }
   };
 
@@ -154,6 +162,7 @@ export default function Inventory() {
   const openModal = (item: any = null) => {
     if (item) {
       setCurrentItem(item);
+      setIsExistingBarcodeItem(false);
       setFormData({
         barcode: item.barcode,
         name: item.name,
@@ -168,6 +177,7 @@ export default function Inventory() {
       });
     } else {
       setCurrentItem(null);
+      setIsExistingBarcodeItem(false);
       setFormData({
         barcode: '',
         name: '',
@@ -188,6 +198,7 @@ export default function Inventory() {
     setIsModalOpen(false);
     setIsScanning(false);
     setCurrentItem(null);
+    setIsExistingBarcodeItem(false);
   };
 
   const filteredItems = items.filter(item => 
@@ -386,7 +397,10 @@ export default function Inventory() {
                           className="w-full pl-4 pr-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-medium placeholder:text-neutral-300"
                           placeholder="Scan or enter barcode"
                           value={formData.barcode}
-                          onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                          onChange={(e) => {
+                            setIsExistingBarcodeItem(false);
+                            setFormData({ ...formData, barcode: e.target.value });
+                          }}
                           onBlur={(e) => checkBarcode(e.target.value)}
                         />
                       </div>
@@ -422,8 +436,15 @@ export default function Inventory() {
                       className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-medium placeholder:text-neutral-300"
                       placeholder="Product Name"
                       value={formData.name}
+                      disabled={!currentItem && isExistingBarcodeItem}
+                      title={!currentItem && isExistingBarcodeItem ? "Item name is locked for existing barcode items." : ""}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
+                    {!currentItem && isExistingBarcodeItem && (
+                      <p className="text-[10px] font-bold text-neutral-400 ml-1">
+                        Existing barcode found. Item Name is locked, other fields are editable.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
