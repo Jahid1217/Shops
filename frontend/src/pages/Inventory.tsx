@@ -29,7 +29,8 @@ type ItemFormData = {
 };
 
 export default function Inventory() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, hasFeature } = useAuth();
+  const canDeleteInventory = hasFeature('inventory.delete');
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -136,8 +137,8 @@ export default function Inventory() {
   };
 
   const handleDelete = async (id: string, itemName: string) => {
-    if (!isAdmin) {
-      alert("Only admins can delete items.");
+    if (!canDeleteInventory) {
+      alert("You don't have permission to delete items.");
       return;
     }
     if (window.confirm('Are you sure you want to delete this item?')) {
@@ -320,11 +321,11 @@ export default function Inventory() {
                         onClick={() => handleDelete(item.id, item.name)}
                         className={cn(
                           "p-2.5 rounded-xl transition-all",
-                          isAdmin 
+                          canDeleteInventory 
                             ? "text-neutral-400 hover:text-red-600 hover:bg-red-50" 
                             : "text-neutral-200 cursor-not-allowed"
                         )}
-                        title={isAdmin ? "Delete Item" : "Only admins can delete"}
+                        title={canDeleteInventory ? "Delete Item" : "You don't have delete access"}
                       >
                         <Trash2 size={16} />
                       </button>

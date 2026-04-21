@@ -20,7 +20,8 @@ import { formatCurrency, calculateDiscount, cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function POS() {
-  const { profile } = useAuth();
+  const { profile, hasFeature } = useAuth();
+  const canCheckout = hasFeature('pos.checkout');
   const [items, setItems] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -376,7 +377,7 @@ export default function POS() {
           </div>
           
           <button 
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || !canCheckout}
             onClick={() => setIsCheckoutModalOpen(true)}
             className="w-full bg-neutral-900 text-white py-4.5 rounded-[1.25rem] font-bold text-lg flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
           >
@@ -496,7 +497,7 @@ export default function POS() {
               <div className="p-8 border-t border-neutral-100 bg-neutral-50/50 shrink-0">
                 <button 
                   onClick={handleCheckout}
-                  disabled={paymentMethod === 'Cash' && cashReceived < cartTotal}
+                  disabled={!canCheckout || (paymentMethod === 'Cash' && cashReceived < cartTotal)}
                   className="w-full bg-neutral-900 text-white py-4.5 rounded-[1.25rem] font-bold text-lg flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
                 >
                    Finalize Sale

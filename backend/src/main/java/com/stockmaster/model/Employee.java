@@ -1,5 +1,6 @@
 package com.stockmaster.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ public class Employee {
     @Column(unique = true)
     private String email;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Builder.Default
@@ -34,6 +36,15 @@ public class Employee {
 
     @Builder.Default
     private String position = "Staff";
+
+    @Builder.Default
+    private String role = "employee";
+
+    @Column(columnDefinition = "TEXT")
+    private String menuPermissions;
+
+    @Column(columnDefinition = "TEXT")
+    private String featurePermissions;
 
     @Column(nullable = false, updatable = false)
     @Builder.Default

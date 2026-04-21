@@ -5,17 +5,18 @@ import { useAuth } from '../lib/AuthContext';
 import { motion } from 'motion/react';
 
 export default function AuditLogs() {
-  const { isAdmin } = useAuth();
+  const { hasMenu, hasFeature } = useAuth();
+  const canViewAudit = hasMenu('audit-logs') && hasFeature('audit.view');
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canViewAudit) {
       fetchLogs();
     } else {
       setLoading(false);
     }
-  }, [isAdmin]);
+  }, [canViewAudit]);
 
   const fetchLogs = async () => {
     try {
@@ -28,7 +29,7 @@ export default function AuditLogs() {
     }
   };
 
-  if (!isAdmin) {
+  if (!canViewAudit) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-center">
         <div className="w-20 h-20 bg-red-50 text-red-500 rounded-[2rem] flex items-center justify-center mb-6">

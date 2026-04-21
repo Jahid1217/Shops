@@ -3,7 +3,8 @@ package com.stockmaster.controller;
 import com.stockmaster.dto.CheckoutRequest;
 import com.stockmaster.model.Sale;
 import com.stockmaster.model.SaleItem;
-import com.stockmaster.model.User;
+import com.stockmaster.security.AuthenticatedUser;
+import com.stockmaster.service.PermissionService;
 import com.stockmaster.service.SaleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,13 +18,16 @@ import java.util.stream.Collectors;
 public class SaleController {
 
     private final SaleService saleService;
+    private final PermissionService permissionService;
 
-    public SaleController(SaleService saleService) {
+    public SaleController(SaleService saleService, PermissionService permissionService) {
         this.saleService = saleService;
+        this.permissionService = permissionService;
     }
 
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAll(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<Map<String, Object>>> getAll(@AuthenticationPrincipal AuthenticatedUser user) {
+        permissionService.requireMenu(user, "history");
         List<Sale> sales = saleService.getAllSales(user.getShopName());
         return ResponseEntity.ok(sales.stream().map(this::toMap).collect(Collectors.toList()));
     }
@@ -31,7 +35,9 @@ public class SaleController {
     @PostMapping("/checkout")
     public ResponseEntity<Map<String, Object>> checkout(
             @RequestBody CheckoutRequest request,
-            @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        permissionService.requireMenu(user, "pos");
+        permissionService.requireFeature(user, "pos.checkout");
         Sale sale = saleService.checkout(request, user.getId(), user.getUsername(), user.getShopName());
         return ResponseEntity.ok(toMap(sale));
     }

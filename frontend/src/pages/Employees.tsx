@@ -18,6 +18,24 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function Employees() {
   const { isAdmin } = useAuth();
+  const menuOptions = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'inventory', label: 'Inventory' },
+    { key: 'pos', label: 'POS' },
+    { key: 'customers', label: 'Customers' },
+    { key: 'history', label: 'History' },
+    { key: 'profile', label: 'Profile' },
+    { key: 'employees', label: 'Employees' },
+    { key: 'audit-logs', label: 'Audit Logs' },
+  ];
+  const featureOptions = [
+    { key: 'pos.checkout', label: 'Checkout Sales' },
+    { key: 'customers.manage', label: 'Manage Customers' },
+    { key: 'inventory.delete', label: 'Delete Inventory Items' },
+    { key: 'employees.manage', label: 'Manage Employees' },
+    { key: 'audit.view', label: 'View Audit Logs' },
+  ];
+
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -33,7 +51,15 @@ export default function Employees() {
     gender: 'Male',
     address: '',
     position: 'Staff',
+    role: 'employee',
+    menuPermissions: ['dashboard', 'inventory', 'pos', 'customers', 'history', 'profile'] as string[],
+    featurePermissions: ['pos.checkout', 'customers.manage'] as string[],
   });
+
+  const parseCsv = (value: string | null | undefined) => {
+    if (!value) return [];
+    return value.split(',').map(v => v.trim()).filter(Boolean);
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -56,11 +82,16 @@ export default function Employees() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      menuPermissions: formData.menuPermissions.join(','),
+      featurePermissions: formData.featurePermissions.join(','),
+    };
     try {
       if (currentEmployee) {
-        await api.put(`/employees/${currentEmployee.id}`, formData);
+        await api.put(`/employees/${currentEmployee.id}`, payload);
       } else {
-        await api.post('/employees', formData);
+        await api.post('/employees', payload);
       }
       closeModal();
       fetchEmployees();
@@ -92,6 +123,9 @@ export default function Employees() {
         gender: employee.gender || 'Male',
         address: employee.address || '',
         position: employee.position || 'Staff',
+        role: employee.role || 'employee',
+        menuPermissions: parseCsv(employee.menuPermissions),
+        featurePermissions: parseCsv(employee.featurePermissions),
       });
     } else {
       setCurrentEmployee(null);
@@ -104,6 +138,9 @@ export default function Employees() {
         gender: 'Male',
         address: '',
         position: 'Staff',
+        role: 'employee',
+        menuPermissions: ['dashboard', 'inventory', 'pos', 'customers', 'history', 'profile'],
+        featurePermissions: ['pos.checkout', 'customers.manage'],
       });
     }
     setIsModalOpen(true);
@@ -216,9 +253,14 @@ export default function Employees() {
                     </div>
                   </td>
                   <td className="px-8 py-5">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
-                      {employee.position}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
+                        {employee.position}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                        {employee.role || 'employee'}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-8 py-5">
                     <span className="font-black text-neutral-900 text-sm">
@@ -343,6 +385,18 @@ export default function Employees() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">Role</label>
+                        <select 
+                          className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
+                          value={formData.role}
+                          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                        >
+                          <option value="employee">Employee</option>
+                          <option value="manager">Manager</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">Position</label>
                         <select 
                           className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
@@ -378,7 +432,63 @@ export default function Employees() {
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       />
                     </div>
-                    {/* Simplified for demo: no new password hashing sent via UI unless required, API handles it if empty default */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">
+                        {currentEmployee ? 'Set New Password (Optional)' : 'Login Password (Required)'}
+                      </label>
+                      <input 
+                        type="password" 
+                        required={!currentEmployee}
+                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 outline-none transition-all font-medium placeholder:text-neutral-300"
+                        placeholder={currentEmployee ? 'Leave blank to keep current password' : 'Create password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-neutral-100">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">Menu Permissions</label>
+                    <div className="space-y-2">
+                      {menuOptions.map((menu) => (
+                        <label key={menu.key} className="flex items-center gap-3 text-sm font-medium text-neutral-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.menuPermissions.includes(menu.key)}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...formData.menuPermissions, menu.key]
+                                : formData.menuPermissions.filter(p => p !== menu.key);
+                              setFormData({ ...formData, menuPermissions: next });
+                            }}
+                          />
+                          {menu.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">Feature Permissions</label>
+                    <div className="space-y-2">
+                      {featureOptions.map((feature) => (
+                        <label key={feature.key} className="flex items-center gap-3 text-sm font-medium text-neutral-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.featurePermissions.includes(feature.key)}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...formData.featurePermissions, feature.key]
+                                : formData.featurePermissions.filter(p => p !== feature.key);
+                              setFormData({ ...formData, featurePermissions: next });
+                            }}
+                          />
+                          {feature.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

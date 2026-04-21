@@ -30,3 +30,15 @@ export function AdminGuard() {
 
   return <Outlet />;
 }
+
+export function MenuGuard({ menu }: { menu: string }) {
+  const { hasMenu, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (!hasMenu(menu)) {
+    return <Navigate to="/profile" replace />;
+  }
+
+  return <Outlet />;
+}

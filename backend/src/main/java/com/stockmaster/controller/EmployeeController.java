@@ -1,8 +1,9 @@
 package com.stockmaster.controller;
 
 import com.stockmaster.model.Employee;
-import com.stockmaster.model.User;
+import com.stockmaster.security.AuthenticatedUser;
 import com.stockmaster.service.EmployeeService;
+import com.stockmaster.service.PermissionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -15,28 +16,34 @@ import java.util.Map;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final PermissionService permissionService;
 
-    public EmployeeController(EmployeeService employeeService) {
+    public EmployeeController(EmployeeService employeeService, PermissionService permissionService) {
         this.employeeService = employeeService;
+        this.permissionService = permissionService;
     }
 
     @GetMapping
-    public ResponseEntity<List<Employee>> getAll(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<Employee>> getAll(@AuthenticationPrincipal AuthenticatedUser user) {
+        permissionService.requireAdmin(user);
         return ResponseEntity.ok(employeeService.getAll(user.getShopName()));
     }
 
     @PostMapping
-    public ResponseEntity<Employee> create(@RequestBody Employee employee, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Employee> create(@RequestBody Employee employee, @AuthenticationPrincipal AuthenticatedUser user) {
+        permissionService.requireAdmin(user);
         return ResponseEntity.ok(employeeService.create(employee, user.getShopName()));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> update(@PathVariable Long id, @RequestBody Employee employee, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Employee> update(@PathVariable Long id, @RequestBody Employee employee, @AuthenticationPrincipal AuthenticatedUser user) {
+        permissionService.requireAdmin(user);
         return ResponseEntity.ok(employeeService.update(id, employee, user.getShopName()));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id, @AuthenticationPrincipal AuthenticatedUser user) {
+        permissionService.requireAdmin(user);
         employeeService.delete(id, user.getShopName());
         return ResponseEntity.ok(Map.of("message", "Employee deleted successfully"));
     }

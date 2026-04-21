@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/AuthContext';
-import { AuthGuard, AdminGuard } from './components/AuthGuard';
+import { AuthGuard, AdminGuard, MenuGuard } from './components/AuthGuard';
 import Layout from './components/Layout';
 
 // Pages
@@ -30,17 +30,35 @@ export default function App() {
 
           {/* Protected Routes */}
           <Route element={<AuthGuard />}>
-            <Route element={<Layout children={<Dashboard />} />} path="/dashboard" />
-            <Route element={<Layout children={<Inventory />} />} path="/inventory" />
-            <Route element={<Layout children={<POS />} />} path="/pos" />
-            <Route element={<Layout children={<Customers />} />} path="/customers" />
-            <Route element={<Layout children={<History />} />} path="/history" />
             <Route element={<Layout children={<Profile />} />} path="/profile" />
+
+            <Route element={<MenuGuard menu="dashboard" />}>
+              <Route element={<Layout children={<Dashboard />} />} path="/dashboard" />
+            </Route>
+
+            <Route element={<MenuGuard menu="inventory" />}>
+              <Route element={<Layout children={<Inventory />} />} path="/inventory" />
+            </Route>
+
+            <Route element={<MenuGuard menu="pos" />}>
+              <Route element={<Layout children={<POS />} />} path="/pos" />
+            </Route>
+
+            <Route element={<MenuGuard menu="customers" />}>
+              <Route element={<Layout children={<Customers />} />} path="/customers" />
+            </Route>
+
+            <Route element={<MenuGuard menu="history" />}>
+              <Route element={<Layout children={<History />} />} path="/history" />
+            </Route>
             
+            <Route element={<MenuGuard menu="audit-logs" />}>
+              <Route element={<Layout children={<AuditLogs />} />} path="/audit-logs" />
+            </Route>
+
             {/* Admin Only Routes */}
             <Route element={<AdminGuard />}>
               <Route element={<Layout children={<Employees />} />} path="/employees" />
-              <Route element={<Layout children={<AuditLogs />} />} path="/audit-logs" />
             </Route>
           </Route>
 

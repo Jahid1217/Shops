@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { profile, isAdmin, logout } = useAuth();
+  const { profile, isAdmin, hasMenu, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -31,15 +31,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Inventory', path: '/inventory', icon: Package },
-    { name: 'POS (Sales)', path: '/pos', icon: ShoppingCart },
-    { name: 'Customers', path: '/customers', icon: Users },
-    ...(isAdmin ? [
+    ...(hasMenu('dashboard') ? [{ name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard }] : []),
+    ...(hasMenu('inventory') ? [{ name: 'Inventory', path: '/inventory', icon: Package }] : []),
+    ...(hasMenu('pos') ? [{ name: 'POS (Sales)', path: '/pos', icon: ShoppingCart }] : []),
+    ...(hasMenu('customers') ? [{ name: 'Customers', path: '/customers', icon: Users }] : []),
+    ...(isAdmin && hasMenu('employees') ? [
       { name: 'Employees', path: '/employees', icon: UserPlus },
+    ] : []),
+    ...(hasMenu('audit-logs') ? [
       { name: 'Audit Logs', path: '/audit-logs', icon: Activity }
     ] : []),
-    { name: 'History', path: '/history', icon: History },
+    ...(hasMenu('history') ? [{ name: 'History', path: '/history', icon: History }] : []),
     { name: 'Profile', path: '/profile', icon: UserCircle },
   ];
 

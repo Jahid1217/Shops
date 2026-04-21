@@ -6,6 +6,8 @@ interface AuthContextType {
   profile: any | null;
   loading: boolean;
   isAdmin: boolean;
+  hasMenu: (menuKey: string) => boolean;
+  hasFeature: (featureKey: string) => boolean;
   login: (userData: any) => void;
   logout: () => void;
 }
@@ -15,6 +17,8 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   isAdmin: false,
+  hasMenu: () => false,
+  hasFeature: () => false,
   login: () => {},
   logout: () => {},
 });
@@ -62,9 +66,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isAdmin = profile?.role === 'admin';
+  const menuPermissions: string[] = profile?.menuPermissions || [];
+  const featurePermissions: string[] = profile?.featurePermissions || [];
+
+  const hasMenu = (menuKey: string) => {
+    if (isAdmin) return true;
+    return menuPermissions.includes(menuKey);
+  };
+
+  const hasFeature = (featureKey: string) => {
+    if (isAdmin) return true;
+    return featurePermissions.includes(featureKey);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, hasMenu, hasFeature, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

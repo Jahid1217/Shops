@@ -18,7 +18,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { formatCurrency, cn } from '../lib/utils';
 
 export default function Customers() {
-  const { profile } = useAuth();
+  const { hasFeature } = useAuth();
+  const canManageCustomers = hasFeature('customers.manage');
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -51,6 +52,10 @@ export default function Customers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageCustomers) {
+      alert("You don't have permission to modify customer data.");
+      return;
+    }
     try {
       if (currentCustomer) {
         await api.put(`/customers/${currentCustomer.id}`, formData);
@@ -115,8 +120,9 @@ export default function Customers() {
           <p className="text-neutral-500 font-medium mt-1">Manage client profiles, loyalty points, and purchase history.</p>
         </div>
         <button 
+          disabled={!canManageCustomers}
           onClick={() => openModal()}
-          className="bg-neutral-900 text-white px-8 py-3.5 rounded-2xl font-bold flex items-center justify-center hover:bg-neutral-800 hover:shadow-lg hover:shadow-neutral-200 transition-all active:scale-95"
+          className="bg-neutral-900 text-white px-8 py-3.5 rounded-2xl font-bold flex items-center justify-center hover:bg-neutral-800 hover:shadow-lg hover:shadow-neutral-200 transition-all active:scale-95 disabled:opacity-50 disabled:hover:shadow-none"
         >
           <Plus size={20} className="mr-2" />
           Add Customer
@@ -165,8 +171,9 @@ export default function Customers() {
                     <History size={18} />
                   </button>
                   <button 
+                    disabled={!canManageCustomers}
                     onClick={() => openModal(customer)}
-                    className="w-10 h-10 rounded-xl bg-neutral-50 text-neutral-500 flex items-center justify-center hover:bg-neutral-900 hover:text-white transition-colors"
+                    className="w-10 h-10 rounded-xl bg-neutral-50 text-neutral-500 flex items-center justify-center hover:bg-neutral-900 hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-neutral-50 disabled:hover:text-neutral-500"
                   >
                     <Edit2 size={18} />
                   </button>
