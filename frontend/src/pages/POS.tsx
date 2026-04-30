@@ -396,20 +396,20 @@ export default function POS() {
       </div>
 
       {/* Right side - Cart & Checkout */}
-      <div className="w-full md:w-[400px] lg:w-[450px] flex flex-col bg-white rounded-[2rem] border border-neutral-200/60 shadow-sm overflow-hidden flex-shrink-0">
-        <div className="p-6 border-b border-neutral-100 bg-neutral-900 text-white">
+      <div className="w-full md:w-[380px] lg:w-[420px] flex flex-col bg-white rounded-[2rem] border border-neutral-200/60 shadow-sm overflow-hidden flex-shrink-0">
+        <div className="p-5 border-b border-neutral-100 bg-neutral-900 text-white">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
               <ShoppingCart size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight">Current Sale</h2>
-              <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mt-0.5">{cart.length} Items in Cart</p>
+              <h2 className="text-lg font-bold tracking-tight">Current Sale</h2>
+              <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 mt-0.5">{cart.length} Items in Cart</p>
             </div>
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-neutral-50/30">
+        <div className="flex-1 overflow-y-auto p-3.5 custom-scrollbar bg-neutral-50/30">
           <AnimatePresence>
             {cart.map((cartItem) => {
               const discountedPrice = calculateDiscount(cartItem.item.sellingPrice, cartItem.item.discountType, cartItem.item.discountValue);
@@ -420,12 +420,12 @@ export default function POS() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white border border-neutral-200/80 rounded-2xl p-4 mb-3 flex items-center gap-4 hover:border-neutral-300 hover:shadow-md transition-all group"
+                  className="bg-white border border-neutral-200/80 rounded-2xl p-3.5 mb-2.5 flex items-center gap-3 hover:border-neutral-300 hover:shadow-md transition-all group"
                 >
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-neutral-900 truncate">{cartItem.item.name}</h4>
+                    <h4 className="font-semibold text-sm text-neutral-900 truncate">{cartItem.item.name}</h4>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm font-black text-neutral-900">{formatCurrency(discountedPrice)}</span>
+                      <span className="text-xs font-black text-neutral-900">{formatCurrency(discountedPrice)}</span>
                       {cartItem.item.discountValue > 0 && (
                         <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">Sale</span>
                       )}
@@ -469,8 +469,8 @@ export default function POS() {
           )}
         </div>
 
-        <div className="p-6 bg-white border-t border-neutral-100">
-          <div className="space-y-3 mb-6 bg-neutral-50 p-5 rounded-[1.5rem] border border-neutral-200/50">
+        <div className="p-5 bg-white border-t border-neutral-100">
+          <div className="space-y-2.5 mb-5 bg-neutral-50 p-4 rounded-[1.5rem] border border-neutral-200/50">
             <div className="flex justify-between text-sm">
               <span className="font-bold text-neutral-500">Subtotal</span>
               <span className="font-bold text-neutral-900">{formatCurrency(cartSubtotal)}</span>
@@ -482,16 +482,16 @@ export default function POS() {
             <div className="h-px bg-neutral-200/60 my-2" />
             <div className="flex justify-between items-end">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Total</span>
-              <span className="text-3xl font-black text-neutral-900 tracking-tight">{formatCurrency(cartTotal)}</span>
+              <span className="text-2xl font-black text-neutral-900 tracking-tight">{formatCurrency(cartTotal)}</span>
             </div>
           </div>
           
           <button 
             disabled={cart.length === 0 || !canCheckout}
             onClick={() => setIsCheckoutModalOpen(true)}
-            className="w-full bg-neutral-900 text-white py-4.5 rounded-[1.25rem] font-bold text-lg flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
+            className="w-full bg-neutral-900 text-white py-3.5 rounded-[1.25rem] font-bold text-base flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
           >
-            <Banknote size={24} className="mr-3" />
+            <Banknote size={20} className="mr-2" />
             Checkout Now
           </button>
         </div>
@@ -512,11 +512,11 @@ export default function POS() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-neutral-100 flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-neutral-100 flex flex-col max-h-[90vh]"
             >
-              <div className="px-8 py-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50 shrink-0">
+              <div className="px-6 py-5 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50 shrink-0">
                 <div>
-                  <h2 className="text-2xl font-bold text-neutral-900 tracking-tight">Checkout</h2>
+                  <h2 className="text-xl font-bold text-neutral-900 tracking-tight">Checkout</h2>
                   <p className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 mt-1">Complete Sale</p>
                 </div>
                 <button onClick={() => setIsCheckoutModalOpen(false)} className="p-2.5 hover:bg-white hover:shadow-sm shadow-neutral-200 rounded-xl transition-all text-neutral-400 hover:text-neutral-900 border border-transparent hover:border-neutral-200">
@@ -524,10 +524,10 @@ export default function POS() {
                 </button>
               </div>
 
-              <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
-                <div className="bg-neutral-900 text-white p-6 rounded-[1.5rem] shadow-lg shadow-neutral-200 flex justify-between items-center transform transition-transform hover:scale-[1.02]">
+              <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                <div className="bg-neutral-900 text-white p-5 rounded-[1.5rem] shadow-lg shadow-neutral-200 flex justify-between items-center transform transition-transform hover:scale-[1.02]">
                   <span className="text-sm font-bold opacity-80 uppercase tracking-widest text-[10px]">Total Amount</span>
-                  <span className="text-4xl font-black tracking-tight">{formatCurrency(cartTotal)}</span>
+                  <span className="text-3xl font-black tracking-tight">{formatCurrency(cartTotal)}</span>
                 </div>
 
                 <div className="space-y-3">
@@ -547,7 +547,7 @@ export default function POS() {
                           }
                         }}
                         className={cn(
-                          "py-4 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 transition-all font-bold active:scale-95",
+                          "py-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 border-2 transition-all font-bold active:scale-95",
                           paymentMethod === method 
                             ? "border-neutral-900 bg-neutral-900 text-white shadow-lg shadow-neutral-200" 
                             : "border-neutral-100 bg-white text-neutral-500 hover:border-neutral-200 hover:bg-neutral-50"
@@ -568,7 +568,7 @@ export default function POS() {
                     <input 
                       type="tel"
                       placeholder="Enter mobile number"
-                      className="w-full px-5 py-4 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-bold text-neutral-900 placeholder:text-neutral-300 placeholder:font-medium bg-neutral-50/50 group-hover:bg-white"
+                      className="w-full px-5 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-semibold text-neutral-900 placeholder:text-neutral-300 placeholder:font-medium bg-neutral-50/50 group-hover:bg-white"
                       value={customerPhone}
                       onChange={handleCustomerPhoneChange}
                     />
@@ -592,7 +592,7 @@ export default function POS() {
                       <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">Card Code (Optional)</label>
                       <div className="grid grid-cols-2 gap-3">
                         <select
-                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
+                          className="w-full px-4 py-3 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
                           value={cardCodeType}
                           onChange={(e) => setCardCodeType(e.target.value as 'Visa' | 'MasterCard' | 'Amex' | 'Other')}
                         >
@@ -605,7 +605,7 @@ export default function POS() {
                           type="text"
                           inputMode="numeric"
                           placeholder="Last 4 of 16-digit code"
-                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black tracking-[0.2em]"
+                          className="w-full px-4 py-3 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black tracking-[0.2em]"
                           value={cardLast4}
                           maxLength={4}
                           onChange={(e) => setCardLast4(normalizeLast4(e.target.value))}
@@ -628,7 +628,7 @@ export default function POS() {
                           Mobile Payment Option (Required)
                         </label>
                         <select
-                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
+                          className="w-full px-4 py-3 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
                           value={mobilePaymentMethod}
                           onChange={(e) => setMobilePaymentMethod(e.target.value)}
                         >
@@ -649,14 +649,14 @@ export default function POS() {
                           type="text"
                           inputMode="numeric"
                           placeholder="e.g. 1234"
-                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black tracking-[0.2em]"
+                          className="w-full px-4 py-3 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black tracking-[0.2em]"
                           value={mobileLast4}
                           maxLength={4}
                           onChange={(e) => setMobileLast4(normalizeLast4(e.target.value))}
                         />
                       </div>
 
-                      <div className="space-y-2 border border-neutral-200 rounded-2xl p-4 bg-neutral-50/50">
+                      <div className="space-y-2 border border-neutral-200 rounded-2xl p-3.5 bg-neutral-50/50">
                         <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">
                           Configure Mobile Methods
                         </label>
@@ -707,7 +707,7 @@ export default function POS() {
                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-lg">৳</span>
                         <input 
                           type="number"
-                          className="w-full pl-10 pr-5 py-4 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black text-xl text-neutral-900 bg-neutral-50/50 focus:bg-white"
+                          className="w-full pl-10 pr-5 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black text-lg text-neutral-900 bg-neutral-50/50 focus:bg-white"
                           value={cashReceived || ''}
                           onChange={(e) => setCashReceived(Number(e.target.value))}
                         />
@@ -715,7 +715,7 @@ export default function POS() {
                       <div className="pt-2 flex justify-end items-center gap-3">
                         <span className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400">Change Due</span>
                         <span className={cn(
-                          "text-xl font-black",
+                          "text-lg font-black",
                           cashReceived >= cartTotal ? "text-green-600" : "text-red-500"
                         )}>
                           {formatCurrency(Math.max(0, cashReceived - cartTotal))}
@@ -726,11 +726,11 @@ export default function POS() {
                 )}
               </div>
 
-              <div className="p-8 border-t border-neutral-100 bg-neutral-50/50 shrink-0">
+              <div className="p-6 border-t border-neutral-100 bg-neutral-50/50 shrink-0">
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setIsCheckoutModalOpen(false)}
-                    className="w-full bg-white text-neutral-900 py-4.5 rounded-[1.25rem] font-bold text-lg border border-neutral-200 hover:bg-neutral-50 transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-white text-neutral-900 py-3.5 rounded-[1.25rem] font-bold text-base border border-neutral-200 hover:bg-neutral-50 transition-all flex items-center justify-center gap-2"
                   >
                     <ArrowLeft size={18} /> Back
                   </button>
@@ -741,7 +741,7 @@ export default function POS() {
                       (paymentMethod === 'Cash' && cashReceived < cartTotal) ||
                       (paymentMethod === 'Mobile' && !mobilePaymentMethod)
                     }
-                    className="w-full bg-neutral-900 text-white py-4.5 rounded-[1.25rem] font-bold text-lg flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
+                    className="w-full bg-neutral-900 text-white py-3.5 rounded-[1.25rem] font-bold text-base flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
                   >
                     Finalize Sale
                   </button>
