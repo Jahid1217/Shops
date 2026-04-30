@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './lib/AuthContext';
 import { AuthGuard, AdminGuard, MenuGuard } from './components/AuthGuard';
 import Layout from './components/Layout';
+import InstallPWAButton from './components/InstallPWAButton';
 
 // Pages
 import Home from './pages/Home';
@@ -70,6 +71,7 @@ export default function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <InstallPWAButton />
       </Router>
     </AuthProvider>
   );
