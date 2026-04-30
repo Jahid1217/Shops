@@ -16,6 +16,7 @@ import Employees from './pages/Employees';
 import AuditLogs from './pages/AuditLogs';
 import History from './pages/History';
 import Profile from './pages/Profile';
+import Reports from './pages/Reports';
 
 export default function App() {
   return (
@@ -50,6 +51,10 @@ export default function App() {
 
             <Route element={<MenuGuard menu="history" />}>
               <Route element={<Layout children={<History />} />} path="/history" />
+            </Route>
+
+            <Route element={<MenuGuard menu="reports" />}>
+              <Route element={<Layout children={<Reports />} />} path="/reports" />
             </Route>
             
             <Route element={<MenuGuard menu="audit-logs" />}>

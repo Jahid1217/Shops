@@ -59,6 +59,10 @@ public class SaleService {
                 .totalPrice(0.0)
                 .discount(0.0)
                 .paymentMethod(request.getPaymentMethod().trim())
+                .cardCodeType(normalizeOptional(request.getCardCodeType()))
+                .cardLast4(normalizeLast4(request.getCardLast4(), "Card code"))
+                .mobilePaymentMethod(normalizeOptional(request.getMobilePaymentMethod()))
+                .mobileLast4(normalizeLast4(request.getMobileLast4(), "Mobile number"))
                 .cashReceived(0.0)
                 .cashReturn(0.0)
                 .customerPhone(customerPhone)
@@ -141,6 +145,29 @@ public class SaleService {
             sale.setCashReturn(cashReceived - netTotal);
         }
 
+        if ("card".equalsIgnoreCase(sale.getPaymentMethod())) {
+            String cardLast4 = sale.getCardLast4();
+            if (cardLast4 != null && cardLast4.length() != 4) {
+                throw new IllegalArgumentException("Card code must be exactly 4 digits.");
+            }
+        } else {
+            sale.setCardCodeType(null);
+            sale.setCardLast4(null);
+        }
+
+        if ("mobile".equalsIgnoreCase(sale.getPaymentMethod())) {
+            if (sale.getMobilePaymentMethod() == null) {
+                throw new IllegalArgumentException("Mobile payment option is required.");
+            }
+            String mobileLast4 = sale.getMobileLast4();
+            if (mobileLast4 != null && mobileLast4.length() != 4) {
+                throw new IllegalArgumentException("Mobile number last 4 digits must be exactly 4 digits.");
+            }
+        } else {
+            sale.setMobilePaymentMethod(null);
+            sale.setMobileLast4(null);
+        }
+
         Sale saved = saleRepository.save(sale);
 
         // Update customer points if phone exists, otherwise create a walk-in customer record.
@@ -191,6 +218,25 @@ public class SaleService {
 
     private double valueOrZero(Double value) {
         return value == null ? 0.0 : value;
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeLast4(String value, String label) {
+        String normalized = normalizeOptional(value);
+        if (normalized == null) {
+            return null;
+        }
+        if (!normalized.matches("\\d{4}")) {
+            throw new IllegalArgumentException(label + " must contain exactly 4 digits.");
+        }
+        return normalized;
     }
 
     private String normalizeShopName(String shopName) {

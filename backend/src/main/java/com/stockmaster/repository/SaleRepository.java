@@ -11,6 +11,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     List<Sale> findByCustomerPhoneAndShopNameOrderByTimestampDesc(String customerPhone, String shopName);
     List<Sale> findTop5ByShopNameOrderByTimestampDesc(String shopName);
     List<Sale> findByTimestampAfterAndShopNameOrderByTimestampDesc(LocalDateTime after, String shopName);
+    List<Sale> findByShopNameAndTimestampBetweenOrderByTimestampDesc(String shopName, LocalDateTime start, LocalDateTime end);
     List<Sale> findByShopNameOrderByTimestampDesc(String shopName);
     List<Sale> findAllByShopName(String shopName);
 

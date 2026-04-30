@@ -9,6 +9,10 @@ public class CheckoutRequest {
     private Double totalPrice;
     private Double discount;
     private String paymentMethod;
+    private String cardCodeType;
+    private String cardLast4;
+    private String mobilePaymentMethod;
+    private String mobileLast4;
     private Double cashReceived;
     private Double cashReturn;
     private String customerPhone;

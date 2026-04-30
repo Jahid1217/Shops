@@ -5,19 +5,29 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "items")
+@Table(
+    name = "items",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_items_shop_barcode", columnNames = {"shop_name", "barcode"}),
+        @UniqueConstraint(name = "uk_items_shop_qrcode", columnNames = {"shop_name", "qr_code"})
+    }
+)
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "barcode")
     private String barcode;
+
+    @Column(name = "qr_code")
+    private String qrCode;
 
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "shop_name")
     private String shopName;
 
     @Builder.Default

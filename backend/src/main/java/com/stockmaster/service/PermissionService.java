@@ -16,6 +16,7 @@ public class PermissionService {
 
     public static final List<String> ALL_MENUS = List.of(
             "dashboard",
+            "reports",
             "inventory",
             "pos",
             "customers",
@@ -35,6 +36,7 @@ public class PermissionService {
 
     public static final List<String> DEFAULT_EMPLOYEE_MENUS = List.of(
             "dashboard",
+            "reports",
             "inventory",
             "pos",
             "customers",

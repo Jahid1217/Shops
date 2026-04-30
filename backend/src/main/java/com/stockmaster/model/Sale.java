@@ -21,6 +21,10 @@ public class Sale {
     private Double discount = 0.0;
 
     private String paymentMethod;
+    private String cardCodeType;
+    private String cardLast4;
+    private String mobilePaymentMethod;
+    private String mobileLast4;
 
     @Builder.Default
     private Double cashReceived = 0.0;

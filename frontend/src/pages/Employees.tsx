@@ -20,6 +20,7 @@ export default function Employees() {
   const { isAdmin } = useAuth();
   const menuOptions = [
     { key: 'dashboard', label: 'Dashboard' },
+    { key: 'reports', label: 'Reports' },
     { key: 'inventory', label: 'Inventory' },
     { key: 'pos', label: 'POS' },
     { key: 'customers', label: 'Customers' },
@@ -52,7 +53,7 @@ export default function Employees() {
     address: '',
     position: 'Staff',
     role: 'employee',
-    menuPermissions: ['dashboard', 'inventory', 'pos', 'customers', 'history', 'profile'] as string[],
+    menuPermissions: ['dashboard', 'reports', 'inventory', 'pos', 'customers', 'history', 'profile'] as string[],
     featurePermissions: ['pos.checkout', 'customers.manage'] as string[],
   });
 
@@ -139,7 +140,7 @@ export default function Employees() {
         address: '',
         position: 'Staff',
         role: 'employee',
-        menuPermissions: ['dashboard', 'inventory', 'pos', 'customers', 'history', 'profile'],
+        menuPermissions: ['dashboard', 'reports', 'inventory', 'pos', 'customers', 'history', 'profile'],
         featurePermissions: ['pos.checkout', 'customers.manage'],
       });
     }

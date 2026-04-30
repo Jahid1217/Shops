@@ -10,7 +10,8 @@ import {
   Receipt,
   QrCode,
   X,
-  UserPlus
+  UserPlus,
+  ArrowLeft
 } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useReactToPrint } from 'react-to-print';
@@ -18,6 +19,9 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/AuthContext';
 import { formatCurrency, calculateDiscount, cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+
+const MOBILE_METHODS_STORAGE_KEY = 'stockmaster_mobile_methods';
+const DEFAULT_MOBILE_METHODS = ['bKash', 'Nagad', 'Upay', 'Other'];
 
 export default function POS() {
   const { profile, hasFeature } = useAuth();
@@ -32,11 +36,40 @@ export default function POS() {
   const [cashReceived, setCashReceived] = useState(0);
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerInfo, setCustomerInfo] = useState<any>(null);
+  const [cardCodeType, setCardCodeType] = useState<'Visa' | 'MasterCard' | 'Amex' | 'Other'>('Visa');
+  const [cardLast4, setCardLast4] = useState('');
+  const [mobilePaymentMethod, setMobilePaymentMethod] = useState('');
+  const [mobileLast4, setMobileLast4] = useState('');
+  const [mobilePaymentMethods, setMobilePaymentMethods] = useState<string[]>(() => {
+    const saved = localStorage.getItem(MOBILE_METHODS_STORAGE_KEY);
+    if (!saved) return DEFAULT_MOBILE_METHODS;
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter((entry) => typeof entry === 'string' && entry.trim().length > 0);
+      }
+      return DEFAULT_MOBILE_METHODS;
+    } catch {
+      return DEFAULT_MOBILE_METHODS;
+    }
+  });
+  const [newMobileMethod, setNewMobileMethod] = useState('');
   
   // Modals
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<string>('');
+  const [lastSaleMeta, setLastSaleMeta] = useState<{
+    paymentMethod: 'Cash' | 'Card' | 'Mobile';
+    cardCodeType: string | null;
+    cardLast4: string | null;
+    mobilePaymentMethod: string | null;
+    mobileLast4: string | null;
+    customerPhone: string | null;
+    customerName: string | null;
+    cashReceived: number;
+    cashReturn: number;
+  } | null>(null);
   
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -44,12 +77,60 @@ export default function POS() {
     fetchItems();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem(MOBILE_METHODS_STORAGE_KEY, JSON.stringify(mobilePaymentMethods));
+  }, [mobilePaymentMethods]);
+
   const fetchItems = async () => {
     try {
       const data = await api.get<any[]>('/items');
       setItems(data.filter(item => item.quantity > 0)); // Only show in-stock items
     } catch (error) {
       console.error("Error fetching items:", error);
+    }
+  };
+
+  const normalizeLast4 = (value: string) => value.replace(/\D/g, '').slice(0, 4);
+
+  const resetSaleSession = () => {
+    setShowReceipt(false);
+    setIsCheckoutModalOpen(false);
+    setCart([]);
+    setCashReceived(0);
+    setCustomerPhone('');
+    setCustomerInfo(null);
+    setPaymentMethod('Cash');
+    setCardCodeType('Visa');
+    setCardLast4('');
+    setMobilePaymentMethod('');
+    setMobileLast4('');
+    setLastSaleMeta(null);
+  };
+
+  const handleBackFromReceipt = () => {
+    setShowReceipt(false);
+    setIsCheckoutModalOpen(true);
+  };
+
+  const addMobilePaymentMethod = () => {
+    const value = newMobileMethod.trim();
+    if (!value) return;
+    if (mobilePaymentMethods.some((entry) => entry.toLowerCase() === value.toLowerCase())) {
+      alert('This mobile payment method already exists.');
+      return;
+    }
+    setMobilePaymentMethods((prev) => [...prev, value]);
+    setNewMobileMethod('');
+  };
+
+  const removeMobilePaymentMethod = (name: string) => {
+    if (mobilePaymentMethods.length <= 1) {
+      alert('At least one mobile payment method is required.');
+      return;
+    }
+    setMobilePaymentMethods((prev) => prev.filter((entry) => entry !== name));
+    if (mobilePaymentMethod === name) {
+      setMobilePaymentMethod('');
     }
   };
 
@@ -154,6 +235,24 @@ export default function POS() {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+
+    const normalizedCardLast4 = normalizeLast4(cardLast4);
+    const normalizedMobileLast4 = normalizeLast4(mobileLast4);
+
+    if (cardLast4 && normalizedCardLast4.length !== 4) {
+      alert('Card code must be exactly 4 digits.');
+      return;
+    }
+
+    if (mobileLast4 && normalizedMobileLast4.length !== 4) {
+      alert('Mobile number must be exactly 4 digits.');
+      return;
+    }
+
+    if (paymentMethod === 'Mobile' && !mobilePaymentMethod) {
+      alert('Please select a mobile payment option.');
+      return;
+    }
     
     // Check stock one last time (optimistic - backend will also verify later if implemented)
     // Here we just rely on API for final checkout logic
@@ -170,6 +269,10 @@ export default function POS() {
       totalPrice: cartTotal,
       discount: totalDiscount,
       paymentMethod,
+      cardCodeType: paymentMethod === 'Card' ? cardCodeType : null,
+      cardLast4: paymentMethod === 'Card' ? (normalizedCardLast4 || null) : null,
+      mobilePaymentMethod: paymentMethod === 'Mobile' ? mobilePaymentMethod : null,
+      mobileLast4: paymentMethod === 'Mobile' ? (normalizedMobileLast4 || null) : null,
       cashReceived: paymentMethod === 'Cash' ? cashReceived : cartTotal,
       cashReturn,
       customerPhone,
@@ -178,6 +281,17 @@ export default function POS() {
     try {
       const response = await api.post<any>('/sales/checkout', checkoutData);
       setLastSaleId(response.id.toString().padStart(6, '0'));
+      setLastSaleMeta({
+        paymentMethod,
+        cardCodeType: paymentMethod === 'Card' ? cardCodeType : null,
+        cardLast4: paymentMethod === 'Card' ? (normalizedCardLast4 || null) : null,
+        mobilePaymentMethod: paymentMethod === 'Mobile' ? mobilePaymentMethod : null,
+        mobileLast4: paymentMethod === 'Mobile' ? (normalizedMobileLast4 || null) : null,
+        customerPhone: customerPhone || null,
+        customerName: customerInfo?.name || null,
+        cashReceived: paymentMethod === 'Cash' ? cashReceived : cartTotal,
+        cashReturn,
+      });
       setIsCheckoutModalOpen(false);
       setShowReceipt(true);
       fetchItems(); // refresh inventory
@@ -194,17 +308,13 @@ export default function POS() {
       alert('Failed to open print dialog. Please try again.');
     },
     onAfterPrint: () => {
-      setShowReceipt(false);
-      setCart([]);
-      setCashReceived(0);
-      setCustomerPhone('');
-      setCustomerInfo(null);
+      resetSaleSession();
     }
   });
 
   const filteredItems = items.filter(item => 
     item.name.toLowerCase().includes(search.toLowerCase()) ||
-    item.barcode.includes(search)
+    (item.barcode || '').includes(search)
   ).slice(0, 12); // limit to 12 items on POS screen for performance
 
   return (
@@ -426,7 +536,16 @@ export default function POS() {
                     {['Cash', 'Card', 'Mobile'].map((method) => (
                       <button
                         key={method}
-                        onClick={() => setPaymentMethod(method as any)}
+                        onClick={() => {
+                          setPaymentMethod(method as any);
+                          if (method !== 'Card') {
+                            setCardLast4('');
+                          }
+                          if (method !== 'Mobile') {
+                            setMobilePaymentMethod('');
+                            setMobileLast4('');
+                          }
+                        }}
                         className={cn(
                           "py-4 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 transition-all font-bold active:scale-95",
                           paymentMethod === method 
@@ -462,6 +581,119 @@ export default function POS() {
                   </div>
                 </div>
 
+                {paymentMethod === 'Card' && (
+                  <AnimatePresence>
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-3 overflow-hidden"
+                    >
+                      <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">Card Code (Optional)</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <select
+                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
+                          value={cardCodeType}
+                          onChange={(e) => setCardCodeType(e.target.value as 'Visa' | 'MasterCard' | 'Amex' | 'Other')}
+                        >
+                          <option value="Visa">Visa</option>
+                          <option value="MasterCard">MasterCard</option>
+                          <option value="Amex">Amex</option>
+                          <option value="Other">Other</option>
+                        </select>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Last 4 of 16-digit code"
+                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black tracking-[0.2em]"
+                          value={cardLast4}
+                          maxLength={4}
+                          onChange={(e) => setCardLast4(normalizeLast4(e.target.value))}
+                        />
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                )}
+
+                {paymentMethod === 'Mobile' && (
+                  <AnimatePresence>
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-4 overflow-hidden"
+                    >
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">
+                          Mobile Payment Option (Required)
+                        </label>
+                        <select
+                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-bold appearance-none bg-white"
+                          value={mobilePaymentMethod}
+                          onChange={(e) => setMobilePaymentMethod(e.target.value)}
+                        >
+                          <option value="">Select payment option</option>
+                          {mobilePaymentMethods.map((method) => (
+                            <option key={method} value={method}>
+                              {method}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">
+                          Last 4 Digits of 11-digit Mobile Number (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="e.g. 1234"
+                          className="w-full px-4 py-3.5 rounded-2xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-black tracking-[0.2em]"
+                          value={mobileLast4}
+                          maxLength={4}
+                          onChange={(e) => setMobileLast4(normalizeLast4(e.target.value))}
+                        />
+                      </div>
+
+                      <div className="space-y-2 border border-neutral-200 rounded-2xl p-4 bg-neutral-50/50">
+                        <label className="text-[10px] font-black uppercase tracking-[0.15em] text-neutral-400 ml-1">
+                          Configure Mobile Methods
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Add method name"
+                            value={newMobileMethod}
+                            onChange={(e) => setNewMobileMethod(e.target.value)}
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 outline-none transition-all font-medium bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={addMobilePaymentMethod}
+                            className="px-4 py-2.5 rounded-xl bg-neutral-900 text-white text-sm font-bold hover:bg-neutral-800 flex items-center gap-1"
+                          >
+                            <Plus size={14} /> Add New
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {mobilePaymentMethods.map((method) => (
+                            <button
+                              key={method}
+                              type="button"
+                              onClick={() => removeMobilePaymentMethod(method)}
+                              className="px-3 py-1.5 rounded-lg bg-white border border-neutral-200 text-xs font-bold text-neutral-600 hover:text-red-600 hover:border-red-200"
+                              title="Remove method"
+                            >
+                              {method} ×
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                )}
+
                 {paymentMethod === 'Cash' && (
                   <AnimatePresence>
                     <motion.div 
@@ -495,13 +727,25 @@ export default function POS() {
               </div>
 
               <div className="p-8 border-t border-neutral-100 bg-neutral-50/50 shrink-0">
-                <button 
-                  onClick={handleCheckout}
-                  disabled={!canCheckout || (paymentMethod === 'Cash' && cashReceived < cartTotal)}
-                  className="w-full bg-neutral-900 text-white py-4.5 rounded-[1.25rem] font-bold text-lg flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
-                >
-                   Finalize Sale
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setIsCheckoutModalOpen(false)}
+                    className="w-full bg-white text-neutral-900 py-4.5 rounded-[1.25rem] font-bold text-lg border border-neutral-200 hover:bg-neutral-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft size={18} /> Back
+                  </button>
+                  <button
+                    onClick={handleCheckout}
+                    disabled={
+                      !canCheckout ||
+                      (paymentMethod === 'Cash' && cashReceived < cartTotal) ||
+                      (paymentMethod === 'Mobile' && !mobilePaymentMethod)
+                    }
+                    className="w-full bg-neutral-900 text-white py-4.5 rounded-[1.25rem] font-bold text-lg flex items-center justify-center hover:bg-neutral-800 hover:shadow-xl hover:shadow-neutral-300 transition-all disabled:opacity-50 disabled:hover:shadow-none active:scale-[0.98]"
+                  >
+                    Finalize Sale
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -517,7 +761,7 @@ export default function POS() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm"
-              onClick={() => setShowReceipt(false)}
+              onClick={resetSaleSession}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -550,10 +794,19 @@ export default function POS() {
                     <span>Cashier:</span>
                     <span className="font-bold text-neutral-900">{profile?.username}</span>
                   </div>
-                  {customerPhone && (
+                  {lastSaleMeta?.customerPhone && (
                     <div className="flex justify-between">
                       <span>Customer:</span>
-                      <span className="font-bold text-neutral-900">{customerInfo?.name || customerPhone}</span>
+                      <span className="font-bold text-neutral-900">{lastSaleMeta.customerName || lastSaleMeta.customerPhone}</span>
+                    </div>
+                  )}
+                  {lastSaleMeta?.paymentMethod && (
+                    <div className="flex justify-between">
+                      <span>Payment:</span>
+                      <span className="font-bold text-neutral-900">
+                        {lastSaleMeta.paymentMethod}
+                        {lastSaleMeta.paymentMethod === 'Mobile' && lastSaleMeta.mobilePaymentMethod ? ` (${lastSaleMeta.mobilePaymentMethod})` : ''}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -594,16 +847,48 @@ export default function POS() {
                   </div>
                 </div>
 
-                {paymentMethod === 'Cash' && (
+                {lastSaleMeta?.paymentMethod === 'Cash' && (
                   <div className="space-y-1 text-xs font-bold text-neutral-500 text-center mb-6">
                     <div className="flex justify-between bg-white px-2">
                        <span>Cash Received:</span>
-                       <span className="text-neutral-900">{formatCurrency(cashReceived)}</span>
+                       <span className="text-neutral-900">{formatCurrency(lastSaleMeta.cashReceived)}</span>
                     </div>
                     <div className="flex justify-between bg-white px-2">
                        <span>Change Returned:</span>
-                       <span className="text-neutral-900">{formatCurrency(Math.max(0, cashReceived - cartTotal))}</span>
+                       <span className="text-neutral-900">{formatCurrency(lastSaleMeta.cashReturn)}</span>
                     </div>
+                  </div>
+                )}
+
+                {lastSaleMeta?.paymentMethod === 'Card' && (lastSaleMeta.cardLast4 || lastSaleMeta.cardCodeType) && (
+                  <div className="space-y-1 text-xs font-bold text-neutral-500 text-center mb-6">
+                    <div className="flex justify-between bg-white px-2">
+                      <span>Card:</span>
+                      <span className="text-neutral-900">{lastSaleMeta.cardCodeType || 'Card'}</span>
+                    </div>
+                    {lastSaleMeta.cardLast4 && (
+                      <div className="flex justify-between bg-white px-2">
+                        <span>Code Last 4:</span>
+                        <span className="text-neutral-900">{lastSaleMeta.cardLast4}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {lastSaleMeta?.paymentMethod === 'Mobile' && (lastSaleMeta.mobilePaymentMethod || lastSaleMeta.mobileLast4) && (
+                  <div className="space-y-1 text-xs font-bold text-neutral-500 text-center mb-6">
+                    {lastSaleMeta.mobilePaymentMethod && (
+                      <div className="flex justify-between bg-white px-2">
+                        <span>Mobile Method:</span>
+                        <span className="text-neutral-900">{lastSaleMeta.mobilePaymentMethod}</span>
+                      </div>
+                    )}
+                    {lastSaleMeta.mobileLast4 && (
+                      <div className="flex justify-between bg-white px-2">
+                        <span>Mobile Last 4:</span>
+                        <span className="text-neutral-900">{lastSaleMeta.mobileLast4}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -620,11 +905,23 @@ export default function POS() {
 
               {/* Actions */}
               <div className="w-full mt-6 grid grid-cols-2 gap-3 z-10">
+                <button
+                  onClick={handleBackFromReceipt}
+                  className="py-4 rounded-2xl font-bold bg-white text-neutral-900 hover:bg-neutral-50 transition-all border border-neutral-200/60 shadow-lg flex justify-center items-center gap-2"
+                >
+                  <ArrowLeft size={18} /> Back
+                </button>
                 <button 
-                  onClick={() => setShowReceipt(false)}
+                  onClick={resetSaleSession}
                   className="py-4 rounded-2xl font-bold bg-white text-neutral-900 hover:bg-neutral-50 transition-all border border-neutral-200/60 shadow-lg flex justify-center items-center gap-2"
                 >
                   <X size={18} /> Close
+                </button>
+                <button
+                  onClick={resetSaleSession}
+                  className="py-4 rounded-2xl font-bold bg-neutral-100 text-neutral-900 hover:bg-neutral-200 transition-all border border-neutral-200/60 shadow-lg flex justify-center items-center gap-2"
+                >
+                  <Plus size={18} /> Add New
                 </button>
                 <button 
                   onClick={handlePrint}

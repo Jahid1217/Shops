@@ -48,6 +48,10 @@ public class SaleController {
         map.put("totalPrice", sale.getTotalPrice());
         map.put("discount", sale.getDiscount());
         map.put("paymentMethod", sale.getPaymentMethod());
+        map.put("cardCodeType", sale.getCardCodeType());
+        map.put("cardLast4", sale.getCardLast4());
+        map.put("mobilePaymentMethod", sale.getMobilePaymentMethod());
+        map.put("mobileLast4", sale.getMobileLast4());
         map.put("cashReceived", sale.getCashReceived());
         map.put("cashReturn", sale.getCashReturn());
         map.put("customerPhone", sale.getCustomerPhone());

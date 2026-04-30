@@ -71,6 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasMenu = (menuKey: string) => {
     if (isAdmin) return true;
+    if (menuKey === 'reports') {
+      return menuPermissions.includes('reports') || menuPermissions.includes('dashboard');
+    }
     return menuPermissions.includes(menuKey);
   };
 

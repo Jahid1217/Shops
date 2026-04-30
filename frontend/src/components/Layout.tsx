@@ -11,6 +11,7 @@ import {
   X,
   UserPlus,
   Activity,
+  BarChart3,
   ChevronRight
 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -35,6 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ...(hasMenu('inventory') ? [{ name: 'Inventory', path: '/inventory', icon: Package }] : []),
     ...(hasMenu('pos') ? [{ name: 'POS (Sales)', path: '/pos', icon: ShoppingCart }] : []),
     ...(hasMenu('customers') ? [{ name: 'Customers', path: '/customers', icon: Users }] : []),
+    ...(hasMenu('reports') ? [{ name: 'Reports', path: '/reports', icon: BarChart3 }] : []),
     ...(isAdmin && hasMenu('employees') ? [
       { name: 'Employees', path: '/employees', icon: UserPlus },
     ] : []),

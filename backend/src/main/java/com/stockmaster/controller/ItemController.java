@@ -1,5 +1,8 @@
 package com.stockmaster.controller;
 
+import com.stockmaster.dto.ItemCodeGenerateRequest;
+import com.stockmaster.dto.ItemCodeRenderResponse;
+import com.stockmaster.dto.ItemCodeUpdateRequest;
 import com.stockmaster.model.Item;
 import com.stockmaster.security.AuthenticatedUser;
 import com.stockmaster.service.ItemService;
@@ -39,11 +42,17 @@ public class ItemController {
     @GetMapping("/barcode/{barcode}")
     public ResponseEntity<?> getByBarcode(@PathVariable String barcode, @AuthenticationPrincipal AuthenticatedUser user) {
         permissionService.requireMenu(user, "inventory");
-        Optional<Item> item = itemService.getByBarcode(barcode, user.getShopName());
+        Optional<Item> item = itemService.getByCode(barcode, user.getShopName());
         if (item.isPresent()) {
             return ResponseEntity.ok(item.get());
         }
         return ResponseEntity.ok(Map.of("found", false));
+    }
+
+    @GetMapping("/{id}/codes")
+    public ResponseEntity<ItemCodeRenderResponse> getCodePreview(@PathVariable Long id, @AuthenticationPrincipal AuthenticatedUser user) {
+        permissionService.requireMenu(user, "inventory");
+        return ResponseEntity.ok(itemService.getCodeRenderData(id, user.getShopName()));
     }
 
     @PostMapping
@@ -56,6 +65,54 @@ public class ItemController {
     public ResponseEntity<Item> update(@PathVariable Long id, @RequestBody Item item, @AuthenticationPrincipal AuthenticatedUser user) {
         permissionService.requireMenu(user, "inventory");
         return ResponseEntity.ok(itemService.update(id, item, user.getId(), user.getUsername(), user.getShopName()));
+    }
+
+    @PostMapping("/{id}/codes/generate")
+    public ResponseEntity<Item> generateCodes(
+            @PathVariable Long id,
+            @RequestBody(required = false) ItemCodeGenerateRequest request,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        permissionService.requireMenu(user, "inventory");
+        boolean generateBarcode = request == null || request.getBarcode() == null || request.getBarcode();
+        boolean generateQrCode = request == null || request.getQrCode() == null || request.getQrCode();
+        boolean overwrite = request != null && Boolean.TRUE.equals(request.getOverwrite());
+        return ResponseEntity.ok(
+                itemService.generateCodes(id, generateBarcode, generateQrCode, overwrite, user.getId(), user.getUsername(), user.getShopName())
+        );
+    }
+
+    @PutMapping("/{id}/codes")
+    public ResponseEntity<Item> upsertCodes(
+            @PathVariable Long id,
+            @RequestBody ItemCodeUpdateRequest request,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        permissionService.requireMenu(user, "inventory");
+        return ResponseEntity.ok(
+                itemService.upsertCodes(id, request.getBarcode(), request.getQrCode(), user.getId(), user.getUsername(), user.getShopName())
+        );
+    }
+
+    @DeleteMapping("/{id}/codes")
+    public ResponseEntity<Item> deleteCodes(
+            @PathVariable Long id,
+            @RequestParam(name = "type", defaultValue = "both") String type,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        permissionService.requireMenu(user, "inventory");
+
+        String normalizedType = type.trim().toLowerCase();
+        boolean deleteBarcode = "barcode".equals(normalizedType) || "both".equals(normalizedType);
+        boolean deleteQrCode = "qrcode".equals(normalizedType) || "qr".equals(normalizedType) || "both".equals(normalizedType);
+
+        if (!deleteBarcode && !deleteQrCode) {
+            throw new IllegalArgumentException("Unsupported code delete type. Use barcode, qrcode, or both.");
+        }
+
+        return ResponseEntity.ok(
+                itemService.deleteCodes(id, deleteBarcode, deleteQrCode, user.getId(), user.getUsername(), user.getShopName())
+        );
     }
 
     @DeleteMapping("/{id}")
